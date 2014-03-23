@@ -22,7 +22,8 @@ users = []
 
 def send_all(msg):
     for t in threads:
-        t.send(msg)
+	if t.isAlive():
+        	t.send(msg)
 
 class HandleThread(threading.Thread):
 
