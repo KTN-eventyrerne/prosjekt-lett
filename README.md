@@ -1,4 +1,10 @@
-prosjekt-lett
+KTN prosjekt
 =============
 
-kjetil sin nye versjon ;)
+Client-Server-Chatt-Program
+
+FILES:
+client.py
+server.py
+
+
