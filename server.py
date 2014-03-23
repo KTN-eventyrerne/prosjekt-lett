@@ -5,12 +5,20 @@ import threading
 import time
 
 HOST = 'localhost'                 # Symbolic name meaning all available interfaces
-PORT = 9999              # Arbitrary non-privileged port
+PORT = 9997              # Arbitrary non-privileged port
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((HOST, PORT))
 
+def valid_username(name):
+    import re
+    return re.match('^\w+$', name)
+
+def available_username(name):
+    return name not in users
+
 threads = []
 messages = []
+users = []
 
 def send_all(msg):
     for t in threads:
@@ -25,24 +33,32 @@ class HandleThread(threading.Thread):
         self.username = ''
 
     def run(self):
+	global users
 	running = True
         while running:
-	    m = self.connection.recv(1024)
-	    jmsg = json.loads(m)
+	    jmsg = json.loads(self.connection.recv(1024))
             print jmsg
             if jmsg[0].get('request', '') == "login":
                 #check username
-                self.username = jmsg[0].get('username', 'Anonymous')
-                self.loggedin = True
-                self.send(json.dumps([{"response": "login", "username": self.username}]))
-                print len(messages)
-                if(len(messages) > 0):
-                    for i in messages:
-                        print i
-                        self.send(json.dumps([{"response": "message", "username": '',"message":i}]))
-                        time.sleep(0.001)
-
-            if jmsg[0].get('request', '') == "message":
+                self.username = jmsg[0].get('username', '')
+		if (not valid_username(self.username)):
+		    print "invalid"
+		    self.send(json.dumps([{"response": "message", "username": self.username,"error": "Invalid username!"}]))
+		elif not available_username(self.username):
+		    print "unav"
+		    self.send(json.dumps([{"response": "message", "username": self.username,"error": "Name already taken!"}]))
+		else:
+		    print "ok"
+	            self.loggedin = True
+		    users.append(self.username)
+	            self.send(json.dumps([{"response": "login", "username": self.username}]))
+	            print len(messages)
+	            if(len(messages) > 0):
+	                for i in messages:
+	                    print i
+	                    self.send(json.dumps([{"response": "message", "username": '',"message":i}]))
+	                    time.sleep(0.001)
+            elif jmsg[0].get('request', '') == "message":
                 if(self.loggedin):
                     messages.append(self.username + ": " + jmsg[0].get('message', ''))
                     #print(messages)
@@ -56,6 +72,7 @@ class HandleThread(threading.Thread):
 		    self.send(json.dumps([{"response": "logout", "username": self.username}]))
 		    print "sendt"
 		    self.connection.close()
+		    users.remove(self.username)
 		    running = False
 		else:
 		    self.send(json.dumps([{"response": "logout", "error": "Not logged in!", "username": self.username}]))

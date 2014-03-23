@@ -25,7 +25,7 @@ def recieve():
 print 'Hello and welcome to this chatting applciation'
 
 host = 'localhost'
-port = 9999
+port = 9997
 
 #fix connection
 connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -52,6 +52,11 @@ while(not loggedin):
     
     if(status[0].get('error', '') == ''):
         loggedin = True
+    elif(status[0].get('error', '') == "Name already taken!"):
+	print "Name already taken!"
+    elif(status[0].get('error', '') == "Invalid username!"):
+	print "Invalid username!"
+	
 
 print "You are logged in"
 
