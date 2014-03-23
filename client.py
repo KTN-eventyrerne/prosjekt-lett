@@ -3,11 +3,20 @@ import socket
 import threading
 import json
 
+exit = False
 
 def recieve():
+    global logedin
+    global exit
     while(exit == False):
         try:
             jmsg = json.loads(connection.recv(1024))
+	    if jmsg[0].get('response') == "logout" and jmsg[0].get('error') == "Not logged in!":
+		print "You are not logged in, unable to logout..."
+		loggedin = False
+	    if jmsg[0].get('response') == "logout" and jmsg[0].get('error') != "Not logged in!" and jmsg[0].get('username') != "":
+		print "Logout sucsess!"
+		exit = True
             print jmsg[0].get('username') + ": " + jmsg[0].get('message')
         except:
             pass
@@ -25,6 +34,7 @@ connection.connect((host, port))
 
 
 #fix threads
+loggedin = False
 exit = False
 ko = []
 lock = threading.Lock()
@@ -33,7 +43,7 @@ thread = threading.Thread(target = recieve)
 thread.setDaemon(True)
 
 
-loggedin = False
+
 #do login sequence
 while(not loggedin):
     username = raw_input('Select a user name: ')
@@ -51,8 +61,9 @@ thread.start()
 
 while(exit == False):
     msg = raw_input('')
-    if(msg == '/logout'):
-        exit = True
+    if(msg == "\logout"):
+	print msg
+        ##exit = True
         connection.send(json.dumps([{'request': 'logout'}]))
         #send logout msg and tear down connection
     else:
@@ -60,3 +71,4 @@ while(exit == False):
         connection.send(json.dumps([{"request": "message", "message": msg}]))
         #lock.release()
 
+connection.close()

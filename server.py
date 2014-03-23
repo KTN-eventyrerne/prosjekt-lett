@@ -23,8 +23,10 @@ class HandleThread(threading.Thread):
         self.username = ''
 
     def run(self):
-        while True:
-            jmsg = json.loads(self.connection.recv(1024))
+	running = True
+        while running:
+	    m = self.connection.recv(1024)
+	    jmsg = json.loads(m)
             print jmsg
             if jmsg[0].get('request', '') == "login":
                 #check username
@@ -40,7 +42,13 @@ class HandleThread(threading.Thread):
 
             if jmsg[0].get('request', '') == "logout":
                 # do logout stuff and respond
-                pass
+		if(self.loggedin):
+		    self.send(json.dumps([{"response": "logout", "username": self.username}]))
+		    print "sendt"
+		    self.connection.close()
+		    running = False
+		else:
+		    self.send(json.dumps([{"response": "logout", "error": "Not logged in!", "username": self.username}]))
                     
 
     def send(self, msg):
