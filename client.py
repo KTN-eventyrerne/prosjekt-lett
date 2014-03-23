@@ -1,10 +1,11 @@
-#from client import Client
+#client.py
 import socket
 import threading
 import json
 
-exit = False
 
+#This function is used in a thread an listens for new messages
+#It prints out the new messages
 def recieve():
     global logedin
     global exit
@@ -22,29 +23,24 @@ def recieve():
             pass
 
 
-print 'Hello and welcome to this chatting applciation'
+#Start of program
+print 'Hello and welcome to this chatting applciation!'
 
+#Fix connection
 host = 'localhost'
-port = 9997
-
-#fix connection
+port = 9996
 connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 connection.connect((host, port))
 
-
-
-#fix threads
+#Fix threads
 loggedin = False
 exit = False
 ko = []
 lock = threading.Lock()
-
 thread = threading.Thread(target = recieve)
 thread.setDaemon(True)
 
-
-
-#do login sequence
+#Do login sequence
 while(not loggedin):
     username = raw_input('Select a user name: ')
     connection.send(json.dumps([{"request": "login", "username": username}]))
@@ -58,23 +54,20 @@ while(not loggedin):
 	print "Invalid username!"
 	
 
-print "You are logged in"
+print "You are logged in!"
 
-
+#Starts the thread for lisning for new messages
 thread.start()
 
-#poll for msgs
-
+#Ask the user for a message and sends the message to the server
 while(exit == False):
     msg = raw_input('')
     if(msg == "\logout"):
 	print msg
-        ##exit = True
         connection.send(json.dumps([{'request': 'logout'}]))
-        #send logout msg and tear down connection
     else:
-        #lock.acquire()
         connection.send(json.dumps([{"request": "message", "message": msg}]))
-        #lock.release()
 
+
+#Close the socket, on client side
 connection.close()
